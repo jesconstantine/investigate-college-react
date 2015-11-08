@@ -2,6 +2,16 @@
 
 const React = require('react');
 
+var ReactRouter = require('react-router');
+var Router  = ReactRouter.Router;
+var Route = ReactRouter.Route;
+var Navigation = ReactRouter.Navigation; // mixin
+
+var History = ReactRouter.History;
+var createBrowserHistory = require('history/lib/createBrowserHistory');
+
+var Catalyst = require('react-catalyst');
+
 /* Initial Demo Stuff */
 const RaisedButton = require('material-ui/lib/raised-button');
 const Dialog = require('material-ui/lib/dialog');
@@ -34,6 +44,7 @@ const Avatar = require('material-ui/lib/avatar');
 const DropDownMenu = require('material-ui/lib/drop-down-menu');
 const CheckboxField = require('material-ui/lib/checkbox');
 const TextField = require('material-ui/lib/text-field');
+const SelectField = require('material-ui/lib/select-field')
 
 /* Theme Stuff */
 const ThemeManager = require('material-ui/lib/styles/theme-manager');
@@ -42,6 +53,8 @@ const Colors = require('material-ui/lib/styles/colors');
 
 const Main = React.createClass({
 
+  mixins : [Catalyst.LinkedStateMixin],
+
   childContextTypes: {
     muiTheme: React.PropTypes.object
   },
@@ -49,6 +62,7 @@ const Main = React.createClass({
   getInitialState () {
     return {
       muiTheme: ThemeManager.getMuiTheme(LightRawTheme),
+      searchCriteria: {}
     };
   },
 
@@ -66,10 +80,56 @@ const Main = React.createClass({
     this.setState({muiTheme: newMuiTheme});
   },
 
+  _handleInputChange(name, e) {
+    if (!e.target.value) {
+      delete this.state.searchCriteria[name];
+    }
+    else {
+      this.state.searchCriteria[name] = e.target.value;
+    }
+
+    this.setState({ searchCriteria : this.state.searchCriteria });
+  },
+
+  _handleCheckChange(name, e) {
+    if ( this.state.searchCriteria[name] ) {
+      delete this.state.searchCriteria[name];
+    }
+    else {
+      this.state.searchCriteria[name] = e.target.value;
+    }
+
+    this.setState({ searchCriteria : this.state.searchCriteria });
+  },
+
+  goToSearch(event) {
+    event.preventDefault();
+    console.log(this.state.searchCriteria);
+
+  },
+
   render() {
 
     let containerStyle = {
       paddingTop: 0
+    };
+
+    let searchButtonContainerStyle = {
+      textAlign: 'center',
+      padding: '1em'
+    };
+
+    let searchButtonStyle = {
+      width: '30%',
+      minWidth: '300px',
+      margin: '4em auto 0'
+    };
+
+    let searchIconStyle = {
+      height: '100%',
+      verticalAlign: 'middle',
+      float: 'left',
+      padding: '6px 0 6px 12px'
     };
 
     let standardActions = [
@@ -78,6 +138,7 @@ const Main = React.createClass({
 
     let mainPaperStyle = {
       width: "80%",
+      maxWidth: '600px',
       padding: "48px 24px",
       margin: "24px auto"
     };
@@ -245,121 +306,136 @@ const Main = React.createClass({
             </IconMenu>
         } />
 
-        <Dialog
-          title="Super Secret Password"
-          actions={standardActions}
-          ref="superSecretPasswordDialog">
-          1-2-3-4-5
-        </Dialog>
-
         <Paper zDepth={4} style={mainPaperStyle}>
           <h1>Find Schools</h1>
           <h2>Compare Schools Now</h2>
+          <form className="search-form" onSubmit={this.goToSearch}>
+            <Card initiallyExpanded={false}>
+              <CardHeader
+                title="Programs / Degrees"
+                avatar={<ClassIcon color={Colors.blueGrey900} />}
+                actAsExpander={true}
+                showExpandableButton={true}>
+              </CardHeader>
+              <CardText expandable={true}>
+                <h3>Choose a degree</h3>
 
-          <Card initiallyExpanded={false}>
-            <CardHeader
-              title="Programs / Degrees"
-              subtitle="Subtitle"
-              avatar={<ClassIcon color={Colors.blueGrey900} />}
-              actAsExpander={true}
-              showExpandableButton={true}>
-            </CardHeader>
-            <CardText expandable={true}>
-              <h3>Choose a degree</h3>
-              <DropDownMenu menuItems={degreeItems} maxHeight="300px" />
+                <SelectField
+                  onChange={this._handleInputChange.bind(null, 'degree')}
+                  fullWidth={true}
+                  menuItems={degreeItems} />
 
-              <h3>Choose a program</h3>
-              <DropDownMenu menuItems={programItems} />
+                <h3>Choose a program</h3>
+                <SelectField
+                  onChange={this._handleInputChange.bind(null, 'program')}
+                  fullWidth={true}
+                  menuItems={programItems} />
+                
+              </CardText>
+            </Card>
 
-            </CardText>
-          </Card>
+            <Card initiallyExpanded={false}>
+              <CardHeader
+                title="Location"
+                avatar={<MapIcon color={Colors.blueGrey900} />}
+                actAsExpander={true}
+                showExpandableButton={true}>
+              </CardHeader>
+              <CardText expandable={true}>
+                <h3>Select a region</h3>
+                <SelectField
+                  onChange={this._handleInputChange.bind(null, 'region')}
+                  fullWidth={true}
+                  menuItems={regionItems} />
+              </CardText>
+            </Card>
 
-          <Card initiallyExpanded={false}>
-            <CardHeader
-              title="Location"
-              subtitle="Subtitle"
-              avatar={<MapIcon color={Colors.blueGrey900} />}
-              actAsExpander={true}
-              showExpandableButton={true}>
-            </CardHeader>
-            <CardText expandable={true}>
-              <h3>Select a region</h3>
-              <DropDownMenu menuItems={regionItems} />
-            </CardText>
-          </Card>
+            <Card initiallyExpanded={false}>
+              <CardHeader
+                title="Size"
+                avatar={<GroupIcon color={Colors.blueGrey900} />}
+                actAsExpander={true}
+                showExpandableButton={true}>
+              </CardHeader>
+              <CardText expandable={true}>
+                <h3>Undergraduate Student Body</h3>
+                <CheckboxField
+                  name="size-small"
+                  value={'small'}
+                  label="Small (< 2,000)"
+                  onClick={this._handleCheckChange.bind(null, 'size-small')} />
+                <CheckboxField
+                  name="size-medium"
+                  value={'medium'}
+                  label="Medium (< 2,000 - 15,000)"
+                  onClick={this._handleCheckChange.bind(null, 'size-medium')} />
+                <CheckboxField
+                  name="size-large"
+                  value={'large'}
+                  label="Large (> 15,000)"
+                  onClick={this._handleCheckChange.bind(null, 'size-large')} />
+              </CardText>
+            </Card>
 
-          <Card initiallyExpanded={false}>
-            <CardHeader
-              title="Size"
-              subtitle="Subtitle"
-              avatar={<GroupIcon color={Colors.blueGrey900} />}
-              actAsExpander={true}
-              showExpandableButton={true}>
-            </CardHeader>
-            <CardText expandable={true}>
-              <h3>Undergraduate Student Body</h3>
-              <CheckboxField
-                name="size"
-                value="small"
-                label="Small (< 2,000)"/>
-              <CheckboxField
-                name="size"
-                value="medium"
-                label="Medium (< 2,000 - 15,000)"/>
-              <CheckboxField
-                name="size"
-                value="large"
-                label="Large (> 15,000)"/>
-            </CardText>
-          </Card>
+            <Card initiallyExpanded={false}>
+              <CardHeader
+                title="Name"
+                avatar={<AccountBalanceIcon />}
+                actAsExpander={true}
+                showExpandableButton={true}>
+              </CardHeader>
+              <CardText expandable={true}>
+                <h3>School Name</h3>
+                <TextField
+                  onBlur={this._handleInputChange.bind(null, 'name')}
+                  hintText="e.g., USA University" />
+              </CardText>
+            </Card>
 
-          <Card initiallyExpanded={false}>
-            <CardHeader
-              title="Name"
-              subtitle="Subtitle"
-              avatar={<AccountBalanceIcon />}
-              actAsExpander={true}
-              showExpandableButton={true}>
-            </CardHeader>
-            <CardText expandable={true}>
-              <h3>School Name</h3>
-              <TextField
-                hintText="e.g., USA University" />
-            </CardText>
-          </Card>
+            <Card initiallyExpanded={false}>
+              <CardHeader
+                title="Advanced Search"
+                avatar={<AdvSearchIcon />}
+                actAsExpander={true}
+                showExpandableButton={true}>
+              </CardHeader>
+              <CardText expandable={true}>
+                <h3>Type of school</h3>
+                <CheckboxField
+                  name="control-public"
+                  value="public"
+                  label="Public"
+                  onClick={this._handleCheckChange.bind(null, 'control-public')} />
+                <CheckboxField
+                  name="control-private"
+                  value="private"
+                  label="Private Nonprofit"
+                  onClick={this._handleCheckChange.bind(null, 'control-private')} />
+                <CheckboxField
+                  name="control-profit"
+                  value="profit"
+                  label="Private For-Profit"
+                  onClick={this._handleCheckChange.bind(null, 'control-profit')} />
 
-          <Card initiallyExpanded={false}>
-            <CardHeader
-              title="Advanced Search"
-              subtitle="Subtitle"
-              avatar={<AdvSearchIcon />}
-              actAsExpander={true}
-              showExpandableButton={true}>
-            </CardHeader>
-            <CardText expandable={true}>
-              <h3>Type of school</h3>
-              <CheckboxField
-                name="control"
-                value="public"
-                label="Public"/>
-              <CheckboxField
-                name="control"
-                value="private"
-                label="Private Nonprofit"/>
-              <CheckboxField
-                name="control"
-                value="private"
-                label="Private For-Profit"/>
+                <h3>Specialized mission</h3>
+                <SelectField
+                  onChange={this._handleInputChange.bind(null, 'specializedMission')}
+                  fullWidth={true}
+                  menuItems={specialDesignationItems} />
 
-              <h3>Specialized mission</h3>
-              <DropDownMenu menuItems={specialDesignationItems} />
-
-              <h3>Religious affiliation</h3>
-              <DropDownMenu menuItems={religionItems} />
-            </CardText>
-          </Card>
-
-          <RaisedButton label="Find Schools" primary={true} onTouchTap={this._handleTouchTap} />
+                <h3>Religious affiliation</h3>
+                <SelectField
+                  onChange={this._handleInputChange.bind(null, 'religiousAffiliation')}
+                  fullWidth={true}
+                  menuItems={religionItems} />
+              </CardText>
+            </Card>
+            <div style={searchButtonContainerStyle}>
+              <RaisedButton label="Find Schools" primary={true} style={searchButtonStyle} type="submit">
+                <SearchIcon color={Colors.fullWhite} style={searchIconStyle} />
+              </RaisedButton>
+            </div>
+          </form>
         </Paper>
         
 
